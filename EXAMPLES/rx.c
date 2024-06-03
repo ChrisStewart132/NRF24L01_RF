@@ -151,31 +151,37 @@ void init(int fd, struct gpiod_line* ce) {
 		tx_buffer[i] = 0xC4;
 	}// set rx addr to 0xC4C4C4C4C4
     _spi_transfer(fd, tx_buffer, rx_buffer, 6);
+
+    printf("listening on: 0x");
+    tx_buffer[0] = R_REGISTER | RX_ADDR_P0;
+    _spi_transfer(fd, tx_buffer, rx_buffer, 6);
+    for(int i = 1; i < 7; i++){
+		printf("%x", rx_buffer[i]);
+	}
+    printf("\n");
 }
 
-void rx(int fd, struct gpiod_line* ce) {
+void rx(int fd, struct gpiod_line* ce, int counter) {
     _gpio_low(ce);
     uint8_t tx_buffer[33] = {RF24_NOP};
 	uint8_t rx_buffer[33] = {0};
 
-    printf("receiving on: 0x");
-
-    tx_buffer[0] = R_REGISTER | RX_ADDR_P0;
-    _spi_transfer(fd, tx_buffer, rx_buffer, 6);
-
-    for(int i = 1; i < 7; i++){
-		printf("%x", rx_buffer[i]);
-	}
-
-	tx_buffer[0] = R_RX_PAYLOAD;
+    tx_buffer[0] = RF24_NOP;
     _spi_transfer(fd, tx_buffer, rx_buffer, 33);
-
-    printf(",    STATUS: 0x%x", rx_buffer[0]);
-	printf(",    rx: ");
-    for(int i = 1; i < 33; i++){
-		printf("%c", rx_buffer[i]);
-	}
-	printf("\n");
+    if(counter % 100 == 0){
+        printf("STATUS: 0x%x\n", rx_buffer[0]);
+    }
+    
+    if((rx_buffer[0] & 0xe) == 0){// P0 received packet(s)
+        tx_buffer[0] = R_RX_PAYLOAD;
+        _spi_transfer(fd, tx_buffer, rx_buffer, 33);
+        printf("    R_RX_PAYLOAD: ");
+        for(int i = 1; i < 33; i++){
+            printf("%c", rx_buffer[i]);
+        }
+        printf("\n");
+    }
+    
 }
 
 int main() {
@@ -185,11 +191,12 @@ int main() {
     int fd; // SPI file descriptor
     init_spi(&fd);
 	init(fd, ce);
+    int counter = 0;
     while (1) {
         _gpio_high(ce);// Activate 
         usleep(130);
-        sleep(1);
-        rx(fd, ce);
+        usleep(100000);
+        rx(fd, ce, counter++);
     }
     if (ce)
         gpiod_line_release(ce);
