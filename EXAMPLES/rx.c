@@ -35,6 +35,14 @@
 #define PWR_UP      1
 #define PRIM_RX     1
 
+#define EN_AA       0x01
+#define ENAA_P5      0
+#define ENAA_P4      0
+#define ENAA_P3      0
+#define ENAA_P2      0
+#define ENAA_P1      0
+#define ENAA_P0      0
+
 #define EN_RXADDR   0x02
 #define ERX_P5      0
 #define ERX_P4      0
@@ -49,6 +57,8 @@
 
 #define R_RX_PAYLOAD    0x61
 #define RF24_NOP      	0xFF
+#define FLUSH_TX      0xE1
+#define FLUSH_RX      0xE2
 
 void _spi_transfer(int fd, uint8_t* tx_buffer, uint8_t* rx_buffer, int size) {
     struct spi_ioc_transfer tr = {
@@ -103,6 +113,17 @@ void init_spi(int* fd) {
     }
 }
 
+void flush(int fd, struct gpiod_line* ce){
+    uint8_t tx_buffer[1] = {RF24_NOP};
+	uint8_t rx_buffer[1] = {0};
+
+    //tx_buffer[0] = FLUSH_TX;
+    //_spi_transfer(fd, tx_buffer, rx_buffer, 1);
+
+    tx_buffer[0] = FLUSH_RX;
+    _spi_transfer(fd, tx_buffer, rx_buffer, 1);
+}
+
 void init(int fd, struct gpiod_line* ce) {
     printf("\ninit\n");
     uint8_t tx_buffer[33] = {RF24_NOP};
@@ -113,20 +134,23 @@ void init(int fd, struct gpiod_line* ce) {
     _spi_transfer(fd, tx_buffer, rx_buffer, 2);
 	usleep(1500);
 
+    tx_buffer[0] = W_REGISTER | EN_AA;
+    tx_buffer[1] = (ENAA_P5<<5) + (ENAA_P4<<4) + (ENAA_P3<<3) + (ENAA_P2<<2) + (ENAA_P1<<1) + (ENAA_P0<<0);
+    _spi_transfer(fd, tx_buffer, rx_buffer, 2);
+
     tx_buffer[0] = W_REGISTER | EN_RXADDR;
     tx_buffer[1] = (ERX_P5<<5) + (ERX_P4<<4) + (ERX_P3<<3) + (ERX_P2<<2) + (ERX_P1<<1) + (ERX_P0<<0);
     _spi_transfer(fd, tx_buffer, rx_buffer, 2);
 
+    tx_buffer[0] = W_REGISTER | RX_PW_P0;
+    tx_buffer[1] = 32;
+    _spi_transfer(fd, tx_buffer, rx_buffer, 2);
+
     tx_buffer[0] = W_REGISTER | RX_ADDR_P0;
-    tx_buffer[1] = RF24_NOP;
 	for(int i = 1; i < 7; i++){
 		tx_buffer[i] = 0xC4;
 	}// set rx addr to 0xC4C4C4C4C4
     _spi_transfer(fd, tx_buffer, rx_buffer, 6);
-
-    tx_buffer[0] = W_REGISTER | RX_PW_P0;
-    tx_buffer[1] = 32;
-    _spi_transfer(fd, tx_buffer, rx_buffer, 2);
 }
 
 void rx(int fd, struct gpiod_line* ce) {
@@ -135,22 +159,23 @@ void rx(int fd, struct gpiod_line* ce) {
 	uint8_t rx_buffer[33] = {0};
 
     printf("receiving on: 0x");
+
     tx_buffer[0] = R_REGISTER | RX_ADDR_P0;
     _spi_transfer(fd, tx_buffer, rx_buffer, 6);
+
     for(int i = 1; i < 7; i++){
 		printf("%x", rx_buffer[i]);
 	}
 
 	tx_buffer[0] = R_RX_PAYLOAD;
     _spi_transfer(fd, tx_buffer, rx_buffer, 33);
+
     printf(",    STATUS: %d", rx_buffer[0]);
 	printf(",    rx: ");
     for(int i = 1; i < 33; i++){
 		printf("%c", rx_buffer[i]);
 	}
 	printf("\n");
-    usleep(1000);
-    _gpio_high(ce);// Activate 
 }
 
 int main() {
@@ -160,8 +185,9 @@ int main() {
     int fd; // SPI file descriptor
     init_spi(&fd);
 	init(fd, ce);
-    _gpio_high(ce);// Activate 
     while (1) {
+        _gpio_high(ce);// Activate 
+        usleep(130);
         sleep(1);
         rx(fd, ce);
     }

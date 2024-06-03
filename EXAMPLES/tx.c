@@ -35,10 +35,20 @@
 #define PWR_UP      1
 #define PRIM_RX     0
 
+#define EN_AA       0x01
+#define ENAA_P5      0
+#define ENAA_P4      0
+#define ENAA_P3      0
+#define ENAA_P2      0
+#define ENAA_P1      0
+#define ENAA_P0      0
+
 #define TX_ADDR     0x10
 
 #define W_TX_PAYLOAD  	0xA0
 #define RF24_NOP      	0xFF
+#define FLUSH_TX      0xE1
+#define FLUSH_RX      0xE2
 
 void _spi_transfer(int fd, uint8_t* tx_buffer, uint8_t* rx_buffer, int size) {
     struct spi_ioc_transfer tr = {
@@ -93,6 +103,17 @@ void init_spi(int* fd) {
     }
 }
 
+void flush(int fd, struct gpiod_line* ce){
+    uint8_t tx_buffer[1] = {RF24_NOP};
+	uint8_t rx_buffer[1] = {0};
+
+    tx_buffer[0] = FLUSH_TX;
+    _spi_transfer(fd, tx_buffer, rx_buffer, 1);
+
+    //tx_buffer[0] = FLUSH_RX;
+    //_spi_transfer(fd, tx_buffer, rx_buffer, 1);
+}
+
 void init(int fd, struct gpiod_line* ce) {
     printf("\ninit\n");
     uint8_t tx_buffer[33] = {RF24_NOP};
@@ -103,11 +124,17 @@ void init(int fd, struct gpiod_line* ce) {
     _spi_transfer(fd, tx_buffer, rx_buffer, 2);
 	usleep(1500);
 
+    tx_buffer[0] = W_REGISTER | EN_AA;
+    tx_buffer[1] = (ENAA_P5<<5) + (ENAA_P4<<4) + (ENAA_P3<<3) + (ENAA_P2<<2) + (ENAA_P1<<1) + (ENAA_P0<<0);
+    _spi_transfer(fd, tx_buffer, rx_buffer, 2);
+
     tx_buffer[0] = W_REGISTER | TX_ADDR;
 	for(int i = 1; i < 7; i++){
 		tx_buffer[i] = 0xC4;
 	}// set tx addr to 0xC4C4C4C4C4
     _spi_transfer(fd, tx_buffer, rx_buffer, 6);
+
+    flush(fd, ce);
 }
 
 void tx(int fd, struct gpiod_line* ce) {
@@ -120,6 +147,10 @@ void tx(int fd, struct gpiod_line* ce) {
     for(int i = 1; i < 7; i++){
 		printf("%x", rx_buffer[i]);
 	}
+
+    if(rx_buffer[0] > 30){
+        flush(fd, ce);
+    }
 
 	tx_buffer[0] = W_TX_PAYLOAD;
 	printf(",    tx: ");
@@ -140,7 +171,7 @@ int main() {
 	init(fd, ce);
     _gpio_high(ce);// Activate 
     while (1) {
-        sleep(1);
+        usleep(100000);
         tx(fd, ce);
     }
     if (ce)
