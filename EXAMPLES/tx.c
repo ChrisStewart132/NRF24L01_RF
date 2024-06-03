@@ -159,7 +159,7 @@ void tx(int fd, struct gpiod_line* ce) {
 		printf("%c", tx_buffer[i]);
 	}// set 32 Byte payload = ABCDEFGHIJK......
     _spi_transfer(fd, tx_buffer, rx_buffer, 33);
-    printf(",    STATUS: %d\n", rx_buffer[0]);
+    printf(",    STATUS: 0x%x\n", rx_buffer[0]);
 }
 
 int main() {

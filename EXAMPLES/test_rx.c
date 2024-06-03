@@ -3,8 +3,8 @@
  * Date: 03062024
  * Description: program to test a NRF24 transceiver, register 0x2 is set to 1, registers 0x0 - 0x17 are read and should mostly be non-zero.
  * 
- * gcc -o test test.c -lgpiod
- * ./test
+ * gcc -o test_rx test_rx.c -lgpiod
+ * ./test_rx
  */
 
 #include <gpiod.h>
@@ -18,9 +18,9 @@
 #include <linux/spi/spidev.h>
 
 #define GPIO_CHIP_NAME "gpiochip0"
-#define GPIO_OFFSET_CE 24 // Chip Enable Activates RX or TX mode
+#define GPIO_OFFSET_CE 25 // Chip Enable Activates RX or TX mode
 
-#define SPI_DEVICE "/dev/spidev0.0"
+#define SPI_DEVICE "/dev/spidev0.1"
 #define SPI_HZ 4000000
 
 #define R_REGISTER 0x00
@@ -80,7 +80,7 @@ void init_spi(int* fd) {
 }
 
 void test(int fd, struct gpiod_line* ce) {
-    printf("\ntest\n");
+    printf("\ntest_rx\n");
     uint8_t tx_buffer[2], rx_buffer[2];
 
     tx_buffer[0] = W_REGISTER | 0x2;
@@ -92,7 +92,7 @@ void test(int fd, struct gpiod_line* ce) {
         tx_buffer[0] = R_REGISTER | i;
         tx_buffer[1] = 0xff;// no op
         _spi_transfer(fd, tx_buffer, rx_buffer, 2);
-        printf("   reg_addr: 0x%x, status: %d, reg: %d\n", i, rx_buffer[0], rx_buffer[1]);
+        printf("   reg_addr: 0x%x, status: 0x%x, reg: 0x%x\n", i, rx_buffer[0], rx_buffer[1]);
         usleep(100000);
     }
     printf("\n");

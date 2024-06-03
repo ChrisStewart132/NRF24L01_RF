@@ -170,7 +170,7 @@ void rx(int fd, struct gpiod_line* ce) {
 	tx_buffer[0] = R_RX_PAYLOAD;
     _spi_transfer(fd, tx_buffer, rx_buffer, 33);
 
-    printf(",    STATUS: %d", rx_buffer[0]);
+    printf(",    STATUS: 0x%x", rx_buffer[0]);
 	printf(",    rx: ");
     for(int i = 1; i < 33; i++){
 		printf("%c", rx_buffer[i]);
