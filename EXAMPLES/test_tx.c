@@ -21,7 +21,7 @@
 #define GPIO_OFFSET_CE 24 // Chip Enable Activates RX or TX mode
 
 #define SPI_DEVICE "/dev/spidev0.0"
-#define SPI_HZ 4000000
+#define SPI_HZ 8000000
 
 #define R_REGISTER 0x00
 #define W_REGISTER 0x20
