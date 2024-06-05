@@ -51,7 +51,7 @@
 #define ERX_P1      0
 #define ERX_P0      1
 
-#define SETUP_AW    0x02
+#define SETUP_AW    0x03
 #define AW_3_BYTES   0
 #define AW_4_BYTES   0
 #define AW_5_BYTES   1

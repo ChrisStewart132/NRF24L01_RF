@@ -5,7 +5,7 @@
  * 
  * gcc -o tx_stdin tx_stdin.c -lgpiod
  * echo "test message 123" | ./tx_stdin
- * 
+ * cat test_file.txt | ./tx_stdin
  */
 
 #include <gpiod.h>
@@ -178,7 +178,7 @@ int main() {
         else
             break;
         memset(buffer, 0, 32);
-        usleep(100);
+        usleep(130);
     }
     if (ce)
         gpiod_line_release(ce);
