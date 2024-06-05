@@ -135,11 +135,6 @@ void init(int fd, struct gpiod_line* ce) {
     _spi_transfer(fd, tx_buffer, rx_buffer, 6);
 
     flush(fd, ce);
-}
-
-void tx(int fd, struct gpiod_line* ce, char* string, int string_length) {
-    uint8_t tx_buffer[33] = {RF24_NOP};
-	uint8_t rx_buffer[33] = {0};
 
     printf("transmitting to: 0x");
     tx_buffer[0] = R_REGISTER | TX_ADDR;
@@ -147,23 +142,23 @@ void tx(int fd, struct gpiod_line* ce, char* string, int string_length) {
     for(int i = 1; i < 7; i++){
 		printf("%x", rx_buffer[i]);
 	}
+    printf("\n");
+}
 
-    if(rx_buffer[0] > 30){
-        flush(fd, ce);
-    }
+void tx(int fd, struct gpiod_line* ce, char* string, int string_length) { 
+    uint8_t tx_buffer[33] = {RF24_NOP};
+	uint8_t rx_buffer[33] = {0};
 
 	tx_buffer[0] = W_TX_PAYLOAD;
-	printf(",    tx: ");
     for(int i = 1; i < string_length; i++){
 		tx_buffer[i] = string[i-1];
-		printf("%c", tx_buffer[i]);
 	}
+
+    // pad the remainder of the packet
     for(int i = string_length; i < 33; i++){
 		tx_buffer[i] = 0;
-		//printf("%c", tx_buffer[i]);
-	}// padd the string to 32 bytes
+	}
     _spi_transfer(fd, tx_buffer, rx_buffer, 33);
-    //printf("    STATUS: 0x%x\n", rx_buffer[0]);
 }
 
 int main() {
@@ -174,12 +169,13 @@ int main() {
     init_spi(&fd);
 	init(fd, ce);
     _gpio_high(ce);// Activate 
-    char buffer[32] = {0};
+    char buffer[33] = {0};
+    static int packets_sent = 0;
     while (1) {
-        printf("\nEnter some text: ");
+        printf("\n32_B_TRANSMISSION_%d: ", packets_sent++);
         fgets(buffer, sizeof(buffer), stdin);
-        tx(fd, ce, buffer, 32);
-        memset(buffer, 0, 32);
+        tx(fd, ce, buffer, strlen(buffer));
+        memset(buffer, 0, 33);
     }
     if (ce)
         gpiod_line_release(ce);

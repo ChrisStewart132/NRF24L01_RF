@@ -6,7 +6,6 @@
  * gcc -o tx tx.c -lgpiod
  * ./tx
  */
-
 #include <gpiod.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -135,11 +134,6 @@ void init(int fd, struct gpiod_line* ce) {
     _spi_transfer(fd, tx_buffer, rx_buffer, 6);
 
     flush(fd, ce);
-}
-
-void tx(int fd, struct gpiod_line* ce) {
-    uint8_t tx_buffer[33] = {RF24_NOP};
-	uint8_t rx_buffer[33] = {0};
 
     printf("transmitting to: 0x");
     tx_buffer[0] = R_REGISTER | TX_ADDR;
@@ -147,19 +141,18 @@ void tx(int fd, struct gpiod_line* ce) {
     for(int i = 1; i < 7; i++){
 		printf("%x", rx_buffer[i]);
 	}
+    printf("\n");
+}
 
-    if(rx_buffer[0] > 30){
-        flush(fd, ce);
-    }
+void tx(int fd, struct gpiod_line* ce) { 
+    uint8_t tx_buffer[33] = {RF24_NOP};
+	uint8_t rx_buffer[33] = {0};
 
 	tx_buffer[0] = W_TX_PAYLOAD;
-	printf(",    tx: ");
     for(int i = 1; i < 33; i++){
-		tx_buffer[i] = 'A' - 1 + i;
-		printf("%c", tx_buffer[i]);
-	}// set 32 Byte payload = ABCDEFGHIJK......
+		tx_buffer[i] = 'A' + i - 1;
+	}
     _spi_transfer(fd, tx_buffer, rx_buffer, 33);
-    printf(",    STATUS: 0x%x\n", rx_buffer[0]);
 }
 
 int main() {
@@ -170,9 +163,12 @@ int main() {
     init_spi(&fd);
 	init(fd, ce);
     _gpio_high(ce);// Activate 
+
+    static int packets_sent = 0;
     while (1) {
-        usleep(100000);
+        printf("\n32_B_TRANSMISSION_%d: ", packets_sent++);
         tx(fd, ce);
+        usleep(1300);
     }
     if (ce)
         gpiod_line_release(ce);

@@ -1,10 +1,11 @@
 /**
  * Author: Christopher Stewart (Christopher.ray.stewart@gmail.com)
- * Date: 04062024
+ * Date: 05062024
  * Description: NRF24L01 program to transmit on a NRF24 transceiver via stdin,
  * 
  * gcc -o tx_stdin tx_stdin.c -lgpiod
  * echo "test message 123" | ./tx_stdin
+ * 
  */
 
 #include <gpiod.h>
@@ -141,30 +142,23 @@ void init(int fd, struct gpiod_line* ce) {
 		printf("%x", rx_buffer[i]);
 	}
     printf("\n");
-
     flush(fd, ce);
 }
 
-void tx(int fd, struct gpiod_line* ce, char* data, int len) {
+void tx(int fd, struct gpiod_line* ce, char* string, int string_length) { 
     uint8_t tx_buffer[33] = {RF24_NOP};
 	uint8_t rx_buffer[33] = {0};
 
-    if(rx_buffer[0] > 30){
-        flush(fd, ce);
-    }
-
 	tx_buffer[0] = W_TX_PAYLOAD;
-	printf("W_TX_PAYLOAD: ");
-    for(int i = 1; i < len; i++){
-		tx_buffer[i] = data[i-1];
-		printf("%c", tx_buffer[i]);
+    for(int i = 1; i < string_length; i++){
+		tx_buffer[i] = string[i-1];
 	}
-    for(int i = len; i < 33; i++){
+
+    // pad the remainder of the packet
+    for(int i = string_length; i < 33; i++){
 		tx_buffer[i] = 0;
-		//printf("%c", tx_buffer[i]);
-	}// padd the string to 32 bytes
+	}
     _spi_transfer(fd, tx_buffer, rx_buffer, 33);
-    //printf("    STATUS: 0x%x\n", rx_buffer[0]);
 }
 
 int main() {
@@ -180,15 +174,17 @@ int main() {
     while (1) {
         int bytes_read = read(0, buffer, sizeof(char) * 32);
         if(bytes_read)
-            tx(fd, ce, buffer, 32);
+            tx(fd, ce, buffer, bytes_read);
         else
-            usleep(1000);
+            break;
         memset(buffer, 0, 32);
+        usleep(100);
     }
     if (ce)
         gpiod_line_release(ce);
     if (chip)
         gpiod_chip_close(chip);
     close(fd);
+    printf("EXIT_SUCCESS\n");
     return EXIT_SUCCESS;
 }

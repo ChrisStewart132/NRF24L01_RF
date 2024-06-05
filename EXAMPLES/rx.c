@@ -1,7 +1,7 @@
 /**
  * Author: Christopher Stewart (Christopher.ray.stewart@gmail.com)
  * Date: 03062024
- * Description: NRF24L01 program to receieve on a NRF24 transceiver,
+ * Description: NRF24L01 program to receieve on a NRF24 transceiver
  * 
  * gcc -o rx rx.c -lgpiod
  * ./rx
@@ -17,11 +17,11 @@
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
 
-#define GPIO_CHIP_NAME 	"gpiochip0"
-#define GPIO_OFFSET_CE 	25 // Chip Enable Activates RX or TX mode
+#define GPIO_CHIP_NAME 	"gpiochip0"         
+#define GPIO_OFFSET_CE 	25                  // Chip Enable Activates RX or TX mode
 
-#define SPI_DEVICE 		"/dev/spidev0.1"
-#define SPI_HZ 			4000000
+#define SPI_DEVICE 		"/dev/spidev0.1"    
+#define SPI_HZ 			8000000             
 
 #define R_REGISTER 		0x00
 #define W_REGISTER 		0x20
@@ -51,9 +51,15 @@
 #define ERX_P1      0
 #define ERX_P0      1
 
+#define SETUP_AW    0x02
+#define AW_3_BYTES   0
+#define AW_4_BYTES   0
+#define AW_5_BYTES   1
+
 #define RX_ADDR_P0      0x0A
 
 #define RX_PW_P0        0x11
+#define P0_PACKET_SIZE  32
 
 #define R_RX_PAYLOAD    0x61
 #define RF24_NOP      	0xFF
@@ -143,7 +149,7 @@ void init(int fd, struct gpiod_line* ce) {
     _spi_transfer(fd, tx_buffer, rx_buffer, 2);
 
     tx_buffer[0] = W_REGISTER | RX_PW_P0;
-    tx_buffer[1] = 32;
+    tx_buffer[1] = P0_PACKET_SIZE;
     _spi_transfer(fd, tx_buffer, rx_buffer, 2);
 
     tx_buffer[0] = W_REGISTER | RX_ADDR_P0;
@@ -159,29 +165,37 @@ void init(int fd, struct gpiod_line* ce) {
 		printf("%x", rx_buffer[i]);
 	}
     printf("\n");
+    flush(fd, ce);
 }
 
-void rx(int fd, struct gpiod_line* ce, int counter) {
-    _gpio_low(ce);
+void rx(int fd, struct gpiod_line* ce) {
+    static int counter=0;
+    static int packets_read=0;
+    //_gpio_low(ce);
     uint8_t tx_buffer[33] = {RF24_NOP};
 	uint8_t rx_buffer[33] = {0};
 
     tx_buffer[0] = RF24_NOP;
     _spi_transfer(fd, tx_buffer, rx_buffer, 33);
-    if(counter % 100 == 0){
-        printf("STATUS: 0x%x\n", rx_buffer[0]);
+
+    if(counter++ % 1000000 == 0){
+        printf("STATUS: 0x%x    PACKETS_READ: %d \n", rx_buffer[0], packets_read);
     }
     
-    if((rx_buffer[0] & 0xe) == 0){// P0 received packet(s)
+    bool RX_FIFO_EMPTY = rx_buffer[0] & 0xe;
+    if(!RX_FIFO_EMPTY){// P0 received packet(s)
         tx_buffer[0] = R_RX_PAYLOAD;
         _spi_transfer(fd, tx_buffer, rx_buffer, 33);
-        printf("    R_RX_PAYLOAD: ");
+        packets_read++;
+        printf("R_RX_PAYLOAD_%d: ", packets_read);
         for(int i = 1; i < 33; i++){
             printf("%c", rx_buffer[i]);
         }
         printf("\n");
     }
     
+    //_gpio_high(ce);// Activate 
+    usleep(130);
 }
 
 int main() {
@@ -191,12 +205,11 @@ int main() {
     int fd; // SPI file descriptor
     init_spi(&fd);
 	init(fd, ce);
-    int counter = 0;
-    while (1) {
-        _gpio_high(ce);// Activate 
-        usleep(130);
-        usleep(100000);
-        rx(fd, ce, counter++);
+
+    _gpio_high(ce);// Activate 
+    usleep(130);
+    while (1) { 
+        rx(fd, ce);
     }
     if (ce)
         gpiod_line_release(ce);
