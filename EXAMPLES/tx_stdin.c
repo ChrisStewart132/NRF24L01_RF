@@ -150,12 +150,12 @@ void tx(int fd, struct gpiod_line* ce, char* string, int string_length) {
 	uint8_t rx_buffer[33] = {0};
 
 	tx_buffer[0] = W_TX_PAYLOAD;
-    for(int i = 1; i < string_length; i++){
+    for(int i = 1; i < string_length+1; i++){
 		tx_buffer[i] = string[i-1];
 	}
 
     // pad the remainder of the packet
-    for(int i = string_length; i < 33; i++){
+    for(int i = string_length+1; i < 33; i++){
 		tx_buffer[i] = 0;
 	}
     _spi_transfer(fd, tx_buffer, rx_buffer, 33);
