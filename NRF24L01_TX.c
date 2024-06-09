@@ -5,6 +5,8 @@
  * 
  * gcc -o NRF24L01_TX NRF24L01_TX.c -lgpiod
  * 
+ * rpicam-vid -t 10000 -n --framerate 12 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_grayscale | ./fragment_grayscale | ./defragment_grayscale_to_rgb565_grayscale | ./ST7735S_LCD_stdin_stream
+ * 
  * rpicam-vid -t 10000 -n --framerate 12 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_grayscale | ./fragment_grayscale | ./NRF24L01_TX
  * rpicam-vid -t 0 -n --framerate 30 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_grayscale | ./fragment_grayscale | ./NRF24L01_TX
  * rpicam-vid -t 0 -n --framerate 30 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_4bit_grayscale | ./fragment_4bit_grayscale | ./NRF24L01_TX

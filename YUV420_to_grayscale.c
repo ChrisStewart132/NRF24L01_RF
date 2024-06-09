@@ -22,9 +22,7 @@ int main(int argc, char** argv) {
     while(read(0, y, sizeof(y)) > 0){
         read(0, u, sizeof(u));
         read(0, v, sizeof(v));
-
         write(1, y, sizeof(y));
-        usleep(1000000/30);
     }
 	return EXIT_SUCCESS;
 }

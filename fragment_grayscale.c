@@ -19,7 +19,6 @@ int main(int argc, char** argv) {
     // 32 byte packets
     uint8_t fragment_buffer[32*682];// 682 packets per frame
     while(read(0, grayscale, sizeof(grayscale)) > 0){
-
         // current x,y coordinates
         uint8_t x = 0;
         uint8_t y = 0;
@@ -36,7 +35,6 @@ int main(int argc, char** argv) {
             }
         }
         write(1, fragment_buffer, sizeof(fragment_buffer));
-        usleep(1000000/30);
     }
 	return EXIT_SUCCESS;
 }

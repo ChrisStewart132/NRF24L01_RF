@@ -6,6 +6,8 @@
  * gcc -o ST7735S_LCD_stdin_stream ST7735S_LCD_stdin_stream.c -lgpiod
  * rpicam-vid -t 0 -n --framerate 30 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_RGB565_grayscale | ./ST7735S_LCD_stdin_stream
  * rpicam-vid -t 0 -n --framerate 30 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_RGB565 | ./ST7735S_LCD_stdin_stream
+ * 
+ * rpicam-vid -t 20000 -n --framerate 30 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_grayscale | ./fragment_grayscale | ./defragment_grayscale_to_rgb565_grayscale | ./ST7735S_LCD_stdin_stream
  */
 
 #include <gpiod.h>
@@ -228,10 +230,10 @@ void display_invert(int fd, struct gpiod_line* dc){
 
 
 void display_buffer(int fd, struct gpiod_line* dc, uint16_t buffer[160][128]){
-	// Frame buffer to hold the entire frame in RGB565 format
-    uint8_t frame_buffer[WIDTH * HEIGHT * 2];
-    uint8_t rx_buffer[WIDTH * HEIGHT * 2] = {0}; // Dummy receive buffer
-
+	uint8_t tx_buffer[4] = {NOP};
+	uint8_t frame_buffer[WIDTH * HEIGHT * 2];// Frame buffer to hold the entire frame in RGB565 format
+	uint8_t rx_buffer[WIDTH * HEIGHT * 2] = {0}; // Dummy receive buffer
+	
 	// write to ram
 	_command(fd, dc, RAMWR);
 	_gpio_high(dc);
@@ -267,14 +269,10 @@ int main() {
 
 	init(fd, dc, rst);
 	//display_invert(fd, dc);
-
+	sleep(1);
 	uint16_t buffer[160][128] = {{0}};
-	while(1){
-		for(int i = 0; i < 160; i++){
-			read(0, buffer[i], sizeof(uint16_t)*128);
-		}
+	while(read(0, buffer, sizeof(buffer)) > 0){
 		display_buffer(fd, dc, buffer);
-		usleep(1000);
 	}
 
 	if(dc)

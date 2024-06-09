@@ -44,9 +44,7 @@ int main(int argc, char** argv) {
         if(send_buffer){
             packets_read = 0;
             write(1, rgb565, sizeof(rgb565));
-            usleep(1000); 
         }
-        usleep(130);
     }
 	return EXIT_SUCCESS;
 }
