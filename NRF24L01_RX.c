@@ -1,11 +1,12 @@
 /**
  * Author: Christopher Stewart (Christopher.ray.stewart@gmail.com)
- * Date: 08062024
+ * Date: 09062024
  * Description: NRF24L01 program to receive and stdout 32 byte packets
  * 
  * gcc -o NRF24L01_RX NRF24L01_RX.c -lgpiod
  * 
  * ./NRF24L01_RX | ./defragment_grayscale_to_rgb565_grayscale | ./ST7735S_LCD_stdin_stream
+ * ./NRF24L01_RX | ./defragment_4bit_grayscale_to_rgb565_grayscale | ./ST7735S_LCD_stdin_stream
  */
 
 #include <gpiod.h>
@@ -176,14 +177,16 @@ void rx(int fd, struct gpiod_line* ce) {
         _spi_transfer(fd, tx_buffer, rx_buffer, 33);
         //printf("%d,%d\n", rx_buffer[1], rx_buffer[2]);
         write(1, &(rx_buffer[1]), 32);
+        counter++;
     }
     
     //_gpio_high(ce);// Activate 
-    if(counter++ >= 682){
+    if(counter >= 682){
         counter = 0;
+        usleep(10000);
+    } else if(RX_FIFO_EMPTY){
         usleep(1000);
     }
-    usleep(130);
 }
 
 int main() {

@@ -1,11 +1,13 @@
 /**
  * Author: Christopher Stewart (Christopher.ray.stewart@gmail.com)
- * Date: 08062024
+ * Date: 09062024
  * Description: NRF24L01 program to transmit 32 byte packets via stdin,
  * 
  * gcc -o NRF24L01_TX NRF24L01_TX.c -lgpiod
  * 
+ * rpicam-vid -t 10000 -n --framerate 12 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_grayscale | ./fragment_grayscale | ./NRF24L01_TX
  * rpicam-vid -t 0 -n --framerate 30 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_grayscale | ./fragment_grayscale | ./NRF24L01_TX
+ * rpicam-vid -t 0 -n --framerate 30 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_4bit_grayscale | ./fragment_4bit_grayscale | ./NRF24L01_TX
  */
 
 #include <gpiod.h>
@@ -153,7 +155,7 @@ void tx(int fd, struct gpiod_line* ce, char* string, int string_length) {
     _spi_transfer(fd, tx_buffer, rx_buffer, 33);
     if(counter++ >= 682){
         counter = 0;
-        usleep(1000);
+        usleep(10000);
     }
     usleep(130);
 }
