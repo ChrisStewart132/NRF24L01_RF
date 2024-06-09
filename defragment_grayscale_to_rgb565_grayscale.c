@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <string.h>
 
 #define WIDTH 128
 #define HEIGHT 160
@@ -21,13 +22,9 @@ int main(int argc, char** argv) {
     uint8_t fragment[32];
 
     int packets_read = 0;
-    while(1){
-        // read fragment
-        read(0, fragment, sizeof(fragment));
+    while(read(0, fragment, sizeof(fragment)) > 0){
+        packets_read++;       
 
-        packets_read++;
-
-        // buffer fragment
         // current x,y coordinates
         uint8_t x = fragment[0];
         uint8_t y = fragment[1];

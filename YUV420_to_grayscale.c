@@ -19,8 +19,7 @@ int main(int argc, char** argv) {
     uint8_t u[HEIGHT/2][WIDTH/2];
     uint8_t v[HEIGHT/2][WIDTH/2];
 
-    while(1){
-        read(0, y, sizeof(y));
+    while(read(0, y, sizeof(y)) > 0){
         read(0, u, sizeof(u));
         read(0, v, sizeof(v));
 
