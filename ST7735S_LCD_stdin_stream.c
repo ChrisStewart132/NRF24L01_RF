@@ -1,13 +1,21 @@
 /**
  * Author: Christopher Stewart (Christopher.ray.stewart@gmail.com)
- * Date: 06062024
+ * Date: 10062024
  * Description: program to display a 128x160 16bit rgb (565) stream from stdin on a ST7735S 1.8" 128x160 LCD
  * 
  * gcc -o ST7735S_LCD_stdin_stream ST7735S_LCD_stdin_stream.c -lgpiod
+ * 
+ * grayscale
  * rpicam-vid -t 0 -n --framerate 30 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_RGB565_grayscale | ./ST7735S_LCD_stdin_stream
+ * 
+ * rgb565
  * rpicam-vid -t 0 -n --framerate 30 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_RGB565 | ./ST7735S_LCD_stdin_stream
  * 
- * rpicam-vid -t 20000 -n --framerate 30 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_grayscale | ./fragment_grayscale | ./defragment_grayscale_to_rgb565_grayscale | ./ST7735S_LCD_stdin_stream
+ * 4bit grayscale
+ * rpicam-vid -t 20000 -n --framerate 30 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_4bit_grayscale | ./grayscale_4bit_to_16bit_RGB565 | ./ST7735S_LCD_stdin_stream
+ * 
+ * fragment/defragment testing
+ * rpicam-vid -t 20000 -n --framerate 30 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_4bit_grayscale | ./fragment_4bit_grayscale | ./defragment_4bit_grayscale | ./grayscale_4bit_to_16bit_RGB565 | ./ST7735S_LCD_stdin_stream
  */
 
 #include <gpiod.h>

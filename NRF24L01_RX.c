@@ -6,7 +6,7 @@
  * gcc -o NRF24L01_RX NRF24L01_RX.c -lgpiod
  * 
  * ./NRF24L01_RX | ./defragment_grayscale_to_rgb565_grayscale | ./ST7735S_LCD_stdin_stream
- * ./NRF24L01_RX | ./defragment_4bit_grayscale_to_rgb565_grayscale | ./ST7735S_LCD_stdin_stream
+ * ./NRF24L01_RX | ./defragment_4bit_grayscale | ./grayscale_4bit_to_16bit_RGB565 | ./ST7735S_LCD_stdin_stream
  */
 
 #include <gpiod.h>
@@ -181,7 +181,7 @@ void rx(int fd, struct gpiod_line* ce) {
     }
     
     //_gpio_high(ce);// Activate 
-    if(counter >= 682){
+    if(counter >= 341){
         counter = 0;
         usleep(10000);
     } else if(RX_FIFO_EMPTY){

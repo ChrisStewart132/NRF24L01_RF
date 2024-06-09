@@ -8,8 +8,8 @@
  * rpicam-vid -t 10000 -n --framerate 12 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_grayscale | ./fragment_grayscale | ./defragment_grayscale_to_rgb565_grayscale | ./ST7735S_LCD_stdin_stream
  * 
  * rpicam-vid -t 10000 -n --framerate 12 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_grayscale | ./fragment_grayscale | ./NRF24L01_TX
- * rpicam-vid -t 0 -n --framerate 30 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_grayscale | ./fragment_grayscale | ./NRF24L01_TX
- * rpicam-vid -t 0 -n --framerate 30 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_4bit_grayscale | ./fragment_4bit_grayscale | ./NRF24L01_TX
+ * rpicam-vid -t 10000 -n --framerate 30 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_grayscale | ./fragment_grayscale | ./NRF24L01_TX
+ * rpicam-vid -t 10000 -n --framerate 30 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_4bit_grayscale | ./fragment_4bit_grayscale | ./NRF24L01_TX
  */
 
 #include <gpiod.h>
@@ -155,7 +155,7 @@ void tx(int fd, struct gpiod_line* ce, char* string, int string_length) {
 		tx_buffer[i] = 0;
 	}
     _spi_transfer(fd, tx_buffer, rx_buffer, 33);
-    if(counter++ >= 682){
+    if(counter++ >= 341){
         counter = 0;
         usleep(10000);
     }
