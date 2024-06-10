@@ -6,7 +6,7 @@
  * gcc -o NRF24L01_TX NRF24L01_TX.c -lgpiod
  * 
  * Transmit 128x160 4bit grayscale stream (24fps and 20fps)
- * rpicam-vid -t 10000 -n --framerate 24 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_4bit_grayscale | ./fragment_4bit_grayscale | ./NRF24L01_TX
+ * rpicam-vid -t 30000 -n --framerate 24 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_4bit_grayscale | ./fragment_4bit_grayscale | ./NRF24L01_TX
  * 
  */
 
