@@ -46,6 +46,10 @@
 #define ENAA_P1      0
 #define ENAA_P0      0
 
+#define SETUP_RETR  0x4
+#define ARD         0   //4bit
+#define ARC         0   //4bit
+
 #define TX_ADDR     0x10
 
 #define W_TX_PAYLOAD  	0xA0
@@ -128,6 +132,10 @@ void init(int fd, struct gpiod_line* ce) {
 
     tx_buffer[0] = W_REGISTER | EN_AA;
     tx_buffer[1] = (ENAA_P5<<5) + (ENAA_P4<<4) + (ENAA_P3<<3) + (ENAA_P2<<2) + (ENAA_P1<<1) + (ENAA_P0<<0);
+    _spi_transfer(fd, tx_buffer, rx_buffer, 2);
+
+    tx_buffer[0] = W_REGISTER | SETUP_RETR;
+    tx_buffer[1] = (ARD << 4) | ARC;
     _spi_transfer(fd, tx_buffer, rx_buffer, 2);
 
     tx_buffer[0] = W_REGISTER | TX_ADDR;
