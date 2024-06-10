@@ -5,7 +5,6 @@
  * 
  * gcc -o NRF24L01_RX NRF24L01_RX.c -lgpiod
  * 
- * ./NRF24L01_RX | ./defragment_grayscale_to_rgb565_grayscale | ./ST7735S_LCD_stdin_stream
  * ./NRF24L01_RX | ./defragment_4bit_grayscale | ./grayscale_4bit_to_16bit_RGB565 | ./ST7735S_LCD_stdin_stream
  */
 

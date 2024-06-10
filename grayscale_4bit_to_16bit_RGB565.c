@@ -35,6 +35,7 @@ int main(int argc, char** argv) {
             }
         }        
         write(1, rgb565, sizeof(rgb565));
+        usleep(1000);
     }
 	return EXIT_SUCCESS;
 }

@@ -16,7 +16,7 @@
 #define HEIGHT 160
 
 int main(int argc, char** argv) {
-    uint8_t grayscale_4bit[HEIGHT][WIDTH/2];
+    uint8_t grayscale_4bit[HEIGHT][WIDTH/2] = {{0}};
     
     // 32 byte packet
     uint8_t fragment[32];
@@ -40,6 +40,7 @@ int main(int argc, char** argv) {
         if(send_buffer){
             packets_read = 0;
             write(1, grayscale_4bit, sizeof(grayscale_4bit));
+            memset(grayscale_4bit, 0, sizeof(grayscale_4bit));
         }
     }
 	return EXIT_SUCCESS;
