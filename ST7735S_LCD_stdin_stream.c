@@ -1,6 +1,6 @@
 /**
  * Author: Christopher Stewart (Christopher.ray.stewart@gmail.com)
- * Date: 10062024
+ * Date: 11062024
  * Description: program to display a 128x160 16bit rgb (565) stream from stdin on a ST7735S 1.8" 128x160 LCD
  * 
  * gcc -o ST7735S_LCD_stdin_stream ST7735S_LCD_stdin_stream.c -lgpiod
@@ -12,14 +12,11 @@
  * rpicam-vid -t 0 -n --framerate 30 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_RGB565 | ./ST7735S_LCD_stdin_stream
  * 
  * 4bit grayscale
- * rpicam-vid -t 20000 -n --framerate 24 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_4bit_grayscale | ./grayscale_4bit_to_16bit_RGB565 | ./ST7735S_LCD_stdin_stream
+ * rpicam-vid -t 0 -n --framerate 24 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_4bit_grayscale | ./grayscale_4bit_to_16bit_RGB565 | ./ST7735S_LCD_stdin_stream
  * 
  * 2bit grayscale
- * rpicam-vid -t 20000 -n --framerate 24 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_2bit_grayscale | ./grayscale_2bit_to_16bit_RGB565 | ./ST7735S_LCD_stdin_stream
+ * rpicam-vid -t 0 -n --framerate 24 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_2bit_grayscale | ./grayscale_2bit_to_16bit_RGB565 | ./ST7735S_LCD_stdin_stream
  * 
- * fragment/defragment testing
- * rpicam-vid -t 20000 -n --framerate 24 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_4bit_grayscale | ./fragment_4bit_grayscale | ./defragment_4bit_grayscale | ./grayscale_4bit_to_16bit_RGB565 | ./ST7735S_LCD_stdin_stream
- * rpicam-vid -t 20000 -n --framerate 24 --width 128 --height 160 --codec yuv420 -o - | ./YUV420_to_2bit_grayscale | ./fragment_2bit_grayscale | ./defragment_2bit_grayscale | ./grayscale_2bit_to_16bit_RGB565 | ./ST7735S_LCD_stdin_stream
  */
 
 #include <gpiod.h>
@@ -72,12 +69,11 @@
 #define INVON 0x20
 #define INVOFF 0x21
 
-// rgb order?
-#define RGBSET 0x2d	
-// ??
+
+#define RGBSET 0x2d	// rgb order
 #define SCRLAR 0x33
-#define MADCTL 0x36
-#define VSCSAD 0x37
+#define MADCTL 0x36 // lcd orientation settings
+#define VSCSAD 0x37 
 
          
 void _spi_transfer(int fd, uint8_t* tx_buffer, uint8_t* rx_buffer, int size) {
@@ -284,13 +280,12 @@ int main() {
 	sleep(1);
 	uint16_t buffer[160][128] = {{0}};
 	while(1){
-		//for(int i = 0; i < 160; i++){
-			//read(0, buffer[i], sizeof(uint16_t)*128);
-		//}
-		read(0, buffer, sizeof(buffer));
+		for(int i = 0; i < 160; i++){
+			read(0, buffer[i], sizeof(uint16_t)*128);
+		}
+		//read(0, buffer, sizeof(buffer));
 		display_buffer(fd, dc, buffer);
 		usleep(1000);
-		//usleep(1000000/24 - 10000);
 	}
 
 	if(dc)
