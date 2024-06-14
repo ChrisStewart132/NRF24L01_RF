@@ -176,13 +176,13 @@ void rx(int fd, struct gpiod_line* ce) {
 	uint8_t rx_buffer[33] = {0};
 
     tx_buffer[0] = RF24_NOP;
-    _spi_transfer(fd, tx_buffer, rx_buffer, 33);
+    _spi_transfer(fd, tx_buffer, rx_buffer, 1);
 
     if(counter++ % 1000000 == 0){
         printf("STATUS: 0x%x    PACKETS_READ: %d \n", rx_buffer[0], packets_read);
     }
     
-    bool RX_FIFO_EMPTY = rx_buffer[0] & 0xe;
+    bool RX_FIFO_EMPTY = ((rx_buffer[0]>>1)&0x7) == 0x7;
     if(!RX_FIFO_EMPTY){// P0 received packet(s)
         tx_buffer[0] = R_RX_PAYLOAD;
         _spi_transfer(fd, tx_buffer, rx_buffer, 33);
