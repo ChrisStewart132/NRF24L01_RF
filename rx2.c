@@ -185,7 +185,7 @@ void rx(int fd, struct gpiod_line* ce) {
     tx_buffer[0] = W_REGISTER | RF24_NOP;
     _spi_transfer(fd, tx_buffer, rx_buffer, 1);
 
-    if(counter++ % 1000 == 0){
+    if(counter++ % 10000 == 0){
         printf("STATUS: 0x%x    PACKETS_READ: %d \n", rx_buffer[0], packets_read);
     }
     
@@ -193,12 +193,13 @@ void rx(int fd, struct gpiod_line* ce) {
     bool RX_DR = rx_buffer[0] & 0x40;
     if(RX_DR && !RX_FIFO_EMPTY){// P0 received packet(s)
         uint8_t value = rx_buffer[0];
+        /*
         printf("STATUS: 0x%x\n", value);
         printf("    Data Ready RX: %d\n", (value & (1<<6)) != 0);
         printf("    TX Data Sent : %d\n", (value & (1<<5)) != 0);
         printf("    MAX_RT (must be 0 to ): %d\n", (value & (1<<4)) != 0);
         printf("    Data Pipe Number (7==empty): %d\n", ((value>>1)&0x7));
-        printf("    TX_FULL: %d\n", (value & (1<<0)) != 0);
+        printf("    TX_FULL: %d\n", (value & (1<<0)) != 0);*/
 
         tx_buffer[0] = R_REGISTER | R_RX_PAYLOAD;
         _spi_transfer(fd, tx_buffer, rx_buffer, 33);

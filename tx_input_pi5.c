@@ -159,6 +159,9 @@ void tx(int fd, struct gpiod_line* ce, char* string, int string_length) {
 		tx_buffer[i] = 0;
 	}
     _spi_transfer(fd, tx_buffer, rx_buffer, 33);
+    _gpio_high(ce);// Activate 
+    usleep(150);
+    _gpio_low(ce); 
 }
 
 int main() {
@@ -168,7 +171,7 @@ int main() {
     int fd; // SPI file descriptor
     init_spi(&fd);
 	init(fd, ce);
-    _gpio_high(ce);// Activate 
+    
     char buffer[33] = {0};
     static int packets_sent = 0;
     while (1) {
@@ -177,6 +180,7 @@ int main() {
         buffer[32] = '\0';
         tx(fd, ce, buffer, strlen(buffer));
         memset(buffer, 0, 33);
+        usleep(100000);
     }
     if (ce)
         gpiod_line_release(ce);
