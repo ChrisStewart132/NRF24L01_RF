@@ -11,6 +11,8 @@ sudo apt install libgpiod-dev
 
 ![pinout_plan2](docs/pinout_plan2.png)
 
+![nrf24l01_client-server](https://github.com/ChrisStewart132/ChrisStewart132/blob/main/assets/gifs/nrf24l01_client-server.gif?raw=true)
+
 ## 4BIT GRAYSCALE Video Stream Over RF (Single Host)
 ![rpicam stream over NRF24 plan](docs/network_plan.png)
 
