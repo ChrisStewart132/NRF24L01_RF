@@ -55,6 +55,7 @@ RF_CH = 0x05
 CHANNEL = 2			# 0-63 channels
 
 RF_SETUP = 0x06
+
 RF_DR = 1 << 3			# 0-1
 RF_PWR = 0b11 << 1
 LNA = 1
@@ -111,10 +112,10 @@ FIFO_STATUS = 0x17
 BAUDRATE = 8*10**6
 
 spi0 = SPI(0, baudrate=BAUDRATE, sck=Pin(2), mosi=Pin(3), miso=Pin(4))
-cfg0 = {"spi": spi0, "csn": Pin(1, mode=Pin.OUT, value=1) , "ce": Pin(0, mode=Pin.OUT, value=0)}
-
 spi1 = SPI(1, baudrate=BAUDRATE, sck=Pin(10), mosi=Pin(11), miso=Pin(12))
-cfg1 = {"spi": spi1, "csn": Pin(13, mode=Pin.OUT, value=1) , "ce": Pin(14, mode=Pin.OUT, value=0)}
+
+cfg1 = {"spi": spi0, "csn": Pin(1, mode=Pin.OUT, value=1) , "ce": Pin(0, mode=Pin.OUT, value=0)}
+cfg0 = {"spi": spi1, "csn": Pin(13, mode=Pin.OUT, value=1) , "ce": Pin(14, mode=Pin.OUT, value=0)}
 
 ########################################################################################
 # 											driver       							   #
@@ -212,7 +213,7 @@ def nrf24_rx_mode(cfg):
     config = spi_transfer(cfg, bytes([R_REGISTER | NRF_CONFIG, RF24_NOP]))[1]
     assert config & 1 == 1, f"nrf24_rx_mode test {config}"
     
-def nrf24_tx(cfg, write_bytes, AUTO_ACK=True):
+def nrf24_tx(cfg, write_bytes):
     '''
     by default blocks until succesful ack or max retransmission reached
     '''
@@ -223,23 +224,22 @@ def nrf24_tx(cfg, write_bytes, AUTO_ACK=True):
     spi_transfer(cfg, bytes([W_TX_PAYLOAD]) + write_bytes)
     
     success = False
-    while AUTO_ACK:
+    while True:
         status = nrf24_status(cfg)
 
         if status["TX_DS"]:
-            spi_transfer(cfg, bytes([W_REGISTER | STATUS, status["STATUS"]]))
             #print('TX_DS')
             success = True
             break
         
         if status["MAX_RT"]:
-            spi_transfer(cfg, bytes([W_REGISTER | STATUS, status["STATUS"]]))
             #print('MAX_RT')
             success = False
             break
         
         utime.sleep_us(500)            
     
+    spi_transfer(cfg, bytes([W_REGISTER | STATUS, status["STATUS"]]))# reset IRQ
     nrf24_rx_mode(cfg)
     return success
 
@@ -270,7 +270,7 @@ def nrf24_read(cfg, TIMEOUT=10):
             return data
 
         utime.sleep_us(5000)
-        if utime.time()-time > TIMEOUT:
+        if utime.time()-t0 > TIMEOUT:
             print("read timed out:", TIMEOUT)
             return None
 
@@ -279,6 +279,8 @@ def nrf24_read(cfg, TIMEOUT=10):
 # 											application 							   #
 ########################################################################################
 def process_packet(cfg, data):
+    if data == None:
+        return
     assert type(data) == type(bytearray()) or type(data) == type(bytes()), f"process_packet invalid data type {type(data)}"
     data = bytes(data)
 
@@ -376,4 +378,5 @@ except Exception as e:
     print(e)
 finally:
     pass
+
 
