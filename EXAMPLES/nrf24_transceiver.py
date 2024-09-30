@@ -182,6 +182,8 @@ def nrf24_init(cfg):
     spi_transfer(cfg, bytes([W_REGISTER | RF_CH, CHANNEL]))
     spi_transfer(cfg, bytes([W_REGISTER | RF_SETUP, RF_DR|RF_PWR|LNA]))
     spi_transfer(cfg, bytes([W_REGISTER | RX_ADDR_P0] + RX_ADDR_P0_BUFFER))
+    addr = spi_transfer(cfg, bytes([R_REGISTER | RX_ADDR_P0] + [RF24_NOP] * len(RX_ADDR_P0_BUFFER)))[1:]
+    assert bytes(addr) == bytes(RX_ADDR_P0_BUFFER), f"RX_ADDR_P0_BUFFER not correctly wirrten to NRF24 likely SPI not working. {bytes(addr)}!={bytes(RX_ADDR_P0_BUFFER)}"
     spi_transfer(cfg, bytes([W_REGISTER | TX_ADDR] + RX_ADDR_P0_BUFFER))
     spi_transfer(cfg, bytes([W_REGISTER | RX_PW_P0, P0_PACKET_SIZE]))
     
@@ -378,5 +380,6 @@ except Exception as e:
     print(e)
 finally:
     pass
+
 
 

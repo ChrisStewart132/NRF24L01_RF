@@ -6,7 +6,6 @@
  * gcc -o NRF24L01_TEST NRF24L01_TEST.c -lgpiod
  * ./NRF24L01_TEST
  */
-
 #include <gpiod.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,10 +16,10 @@
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
 
-#define GPIO_CHIP_NAME "gpiochip0"
-#define GPIO_OFFSET_CE 24 // Chip Enable Activates RX or TX mode
+#define GPIO_CHIP_NAME "gpiochip4"
+#define GPIO_OFFSET_CE 25 // Chip Enable Activates RX or TX mode
 
-#define SPI_DEVICE "/dev/spidev0.0"
+#define SPI_DEVICE "/dev/spidev0.1"
 #define SPI_HZ 8000000
 
 #define R_REGISTER 0x00
@@ -205,27 +204,27 @@ void print_register(enum register_address reg_addr, int value){
             break;
         case RX_PW_P0:
             printf("RX_PW_P0\n");
-            printf("    payload width: %d\n", value & 0x1f);
+            printf("    payload width: %d\n", value & 0x3f);
             break;
         case RX_PW_P1:
             printf("RX_PW_P1\n");
-            printf("    payload width: %d\n", value & 0x1f);
+            printf("    payload width: %d\n", value & 0x3f);
             break;
         case RX_PW_P2:
             printf("RX_PW_P2\n");
-            printf("    payload width: %d\n", value & 0x1f);
+            printf("    payload width: %d\n", value & 0x3f);
             break;
         case RX_PW_P3:
             printf("RX_PW_P3\n");
-            printf("    payload width: %d\n", value & 0x1f);
+            printf("    payload width: %d\n", value & 0x3f);
             break;
         case RX_PW_P4:
             printf("RX_PW_P4\n");
-            printf("    payload width: %d\n", value & 0x1f);
+            printf("    payload width: %d\n", value & 0x3f);
             break;
         case RX_PW_P5:
             printf("RX_PW_P5\n");
-            printf("    payload width: %d\n", value & 0x1f);
+            printf("    payload width: %d\n", value & 0x3f);
             break;
         case FIFO_STATUS:
             printf("FIFO_STATUS: 0x%x\n", value);

@@ -19,9 +19,9 @@
 #include <linux/spi/spidev.h>
 
 #define GPIO_CHIP_NAME 	"gpiochip0"         
-#define GPIO_OFFSET_CE 	25                  // Chip Enable Activates RX or TX mode
+#define GPIO_OFFSET_CE 	24                  // Chip Enable Activates RX or TX mode
 
-#define SPI_DEVICE 		"/dev/spidev0.1"    
+#define SPI_DEVICE 		"/dev/spidev0.0"    
 #define SPI_HZ 			10000000             
 
 #define R_REGISTER 		0x00
@@ -174,7 +174,7 @@ void rx(int fd, struct gpiod_line* ce) {
     if(!RX_FIFO_EMPTY){// P0 received packet(s)
         tx_buffer[0] = R_RX_PAYLOAD;
         _spi_transfer(fd, tx_buffer, rx_buffer, 33);
-        //printf("%d,%d\n", rx_buffer[1], rx_buffer[2]);
+        printf("%d,%d\n", rx_buffer[1], rx_buffer[2]);
         write(1, &(rx_buffer[1]), 32);
         counter++;
     }

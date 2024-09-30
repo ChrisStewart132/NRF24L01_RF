@@ -129,17 +129,17 @@ void init(int fd, struct gpiod_line* ce) {
     _spi_transfer(fd, tx_buffer, rx_buffer, 2);
 
     tx_buffer[0] = W_REGISTER | TX_ADDR;
-	for(int i = 1; i < 7; i++){
-		tx_buffer[i] = 0xC4;
+	for(int i = 1; i < 6; i++){
+		tx_buffer[i] = 0xC4+i;
 	}// set tx addr to 0xC4C4C4C4C4
     _spi_transfer(fd, tx_buffer, rx_buffer, 6);
 
-    flush(fd, ce);
+    //flush(fd, ce);
 
     printf("transmitting to: 0x");
     tx_buffer[0] = R_REGISTER | TX_ADDR;
     _spi_transfer(fd, tx_buffer, rx_buffer, 6);
-    for(int i = 1; i < 7; i++){
+    for(int i = 1; i < 6; i++){
 		printf("%x", rx_buffer[i]);
 	}
     printf("\n");

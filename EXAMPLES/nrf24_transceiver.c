@@ -27,6 +27,19 @@ struct NRF24_STATUS_DATA {
     int RX_P_NO, ARC_CNT, PLOS_CNT, STATUS_BYTE; 
 };
 
+void print_status_data(struct NRF24_STATUS_DATA status) {
+    printf("RX_DR: %d\n", status.RX_DR);
+    printf("TX_DS: %d\n", status.TX_DS);
+    printf("MAX_RT: %d\n", status.MAX_RT);
+    printf("TX_FULL: %d\n", status.TX_FULL);
+    printf("TX_EMPTY: %d\n", status.TX_EMPTY);
+    printf("RX_EMPTY: %d\n", status.RX_EMPTY);
+    printf("RX_FULL: %d\n", status.RX_FULL);
+    printf("RX_P_NO: %d\n", status.RX_P_NO);
+    printf("ARC_CNT: %d\n", status.ARC_CNT);
+    printf("PLOS_CNT: %d\n", status.PLOS_CNT);
+    printf("STATUS_BYTE: %d\n", status.STATUS_BYTE);
+}
 
 void _spi_transfer(int fd, uint8_t* tx_buffer, uint8_t* rx_buffer, int size) {
     struct spi_ioc_transfer tr = {
@@ -82,7 +95,6 @@ void init_spi(int* fd) {
 }
 
 void nrf24_enable(int fd, struct gpiod_line* ce){
-    _gpio_low(ce);
     _gpio_high(ce);
     usleep(130);
 }
@@ -116,7 +128,7 @@ struct NRF24_STATUS_DATA nrf24_status(int fd, struct gpiod_line* ce) {
     tx_data[2] = RF24_NOP;  // Send NOP command to just read status
 
     // Transfer data over SPI and get the status, FIFO status, and observe TX
-    spi_transfer(fd, tx_data, rx_data, 3);
+    _spi_transfer(fd, tx_data, rx_data, 3);
 
     // Parse the STATUS register (rx_data[0])
     uint8_t status = rx_data[0];
@@ -150,16 +162,16 @@ void init(int fd, struct gpiod_line* ce) {
     nrf24_enable(fd, ce);
 
 	tx_buffer[0] = W_REGISTER | NRF_CONFIG;
-    tx_buffer[1] = (MASK_RX_DR<<6) + (MASK_TX_DS<<5) + (MASK_MAX_RT<<4) + (EN_CRC<<3) + (CRCO<<2) + (PWR_UP<<1) + (PRIM_RX<<0);
+    tx_buffer[1] = MASK_RX_DR + MASK_TX_DS + MASK_MAX_RT + EN_CRC + CRCO + PWR_UP + PRIM_RX;
     _spi_transfer(fd, tx_buffer, rx_buffer, 2);
 	usleep(1500);
 
     tx_buffer[0] = W_REGISTER | EN_AA;
-    tx_buffer[1] = (ENAA_P5<<5) + (ENAA_P4<<4) + (ENAA_P3<<3) + (ENAA_P2<<2) + (ENAA_P1<<1) + (ENAA_P0<<0);
+    tx_buffer[1] = ENAA_P5 + ENAA_P4 + ENAA_P3 + ENAA_P2 + ENAA_P1 + ENAA_P0;
     _spi_transfer(fd, tx_buffer, rx_buffer, 2);
 
     tx_buffer[0] = W_REGISTER | EN_RXADDR;
-    tx_buffer[1] = (ERX_P5<<5) + (ERX_P4<<4) + (ERX_P3<<3) + (ERX_P2<<2) + (ERX_P1<<1) + (ERX_P0<<0);
+    tx_buffer[1] = ERX_P5 + ERX_P4 + ERX_P3 + ERX_P2 + ERX_P1 + ERX_P0;
     _spi_transfer(fd, tx_buffer, rx_buffer, 2);
 
     tx_buffer[0] = W_REGISTER | SETUP_AW;
@@ -179,16 +191,29 @@ void init(int fd, struct gpiod_line* ce) {
     _spi_transfer(fd, tx_buffer, rx_buffer, 2);
 
     tx_buffer[0] = W_REGISTER | RX_ADDR_P0;
-	for(int i = 1; i < 7; i++){
-		tx_buffer[i] = 0xC4;
+	for(int i = 1; i < 1+ADDRESS_WIDTH; i++){
+		tx_buffer[i] = RX_ADDR_P0_BUFFER[i-1];
+        printf("0x%x RX_ADDR_P0_BUFFER[i-1]\n", RX_ADDR_P0_BUFFER[i-1]);
 	}// set rx addr to 0x...
-    _spi_transfer(fd, tx_buffer, rx_buffer, 6);
+    _spi_transfer(fd, tx_buffer, rx_buffer, ADDRESS_WIDTH+1);
+
+    // read addr to confirm SPI working
+    tx_buffer[0] = R_REGISTER | RX_ADDR_P0;
+    for(int i = 1; i < 1+ADDRESS_WIDTH; i++){
+		tx_buffer[i] = RF24_NOP;
+	}
+    _spi_transfer(fd, tx_buffer, rx_buffer, ADDRESS_WIDTH+1);
+    for(int i = 1; i < 1+ADDRESS_WIDTH; i++){
+        if(rx_buffer[i] != RX_ADDR_P0_BUFFER[i-1]){
+            printf("i:%d, buffer: 0x%x, config: 0x%x. RX_ADDR_P0 incorrect.\n", i, rx_buffer[i], RX_ADDR_P0_BUFFER[i-1]);
+        }
+	}
 
     tx_buffer[0] = W_REGISTER | TX_ADDR;
 	for(int i = 1; i < 7; i++){
-		tx_buffer[i] = 0xC4;
+		tx_buffer[i] = RX_ADDR_P0_BUFFER[i-1];
 	}// set tx addr to 0x...
-    _spi_transfer(fd, tx_buffer, rx_buffer, 6);
+    _spi_transfer(fd, tx_buffer, rx_buffer, ADDRESS_WIDTH+1);
 
     tx_buffer[0] = W_REGISTER | RX_PW_P0;
     tx_buffer[1] = P0_PACKET_SIZE;
@@ -196,26 +221,32 @@ void init(int fd, struct gpiod_line* ce) {
 
     nrf24_flush_tx(fd, ce);
     nrf24_flush_rx(fd, ce);
+
+
+    struct NRF24_STATUS_DATA status = nrf24_status(fd, ce);
+    print_status_data(status);
 }
 
 void nrf24_tx_mode(int fd, struct gpiod_line* ce){
     nrf24_disable(fd, ce);
-    uint8_t tx_buffer[] = {R_REGISTER | NRF_CONFIG, RF24_NOP};
+    uint8_t tx_buffer[2] = {R_REGISTER | NRF_CONFIG, RF24_NOP};
     uint8_t rx_buffer[2];
     uint8_t config = rx_buffer[1];
     config = config & 1 ? config -1 : config;
-    tx_buffer[] = {W_REGISTER | NRF_CONFIG, RF24_NOP};
+    tx_buffer[0] = W_REGISTER | NRF_CONFIG;
+    tx_buffer[1] = RF24_NOP;
     _spi_transfer(fd, tx_buffer, rx_buffer, 2);
     nrf24_enable(fd, ce);
 }
 
 void nrf24_rx_mode(int fd, struct gpiod_line* ce){
     nrf24_disable(fd, ce);
-    uint8_t tx_buffer[] = {R_REGISTER | NRF_CONFIG, RF24_NOP};
+    uint8_t tx_buffer[2] = {R_REGISTER | NRF_CONFIG, RF24_NOP};
     uint8_t rx_buffer[2];
     uint8_t config = rx_buffer[1];
     config |= 1;
-    tx_buffer[] = {W_REGISTER | NRF_CONFIG, RF24_NOP};
+    tx_buffer[0] = W_REGISTER | NRF_CONFIG;
+    tx_buffer[1] = RF24_NOP;
     _spi_transfer(fd, tx_buffer, rx_buffer, 2);
     nrf24_enable(fd, ce);
 }
@@ -224,7 +255,8 @@ bool nrf24_tx(int fd, struct gpiod_line* ce, char* string, int string_length){
     uint8_t tx_buffer[33] = {RF24_NOP};
 	uint8_t rx_buffer[33] = {0};
     tx_buffer[0] = W_TX_PAYLOAD;
-    string_length = string_length < 33 ? string_length : 33;
+    // clamp and write data to send
+    string_length = string_length < P0_PACKET_SIZE+1 ? string_length : P0_PACKET_SIZE+1;
     for(int i = 0; i < string_length; i++){
 		tx_buffer[i+1] = string[i];
 	}
@@ -235,7 +267,7 @@ bool nrf24_tx(int fd, struct gpiod_line* ce, char* string, int string_length){
     nrf24_flush_tx(fd, ce);
     nrf24_tx_mode(fd, ce);
 
-    // send packet
+    // queue packet for transmission
     _spi_transfer(fd, tx_buffer, rx_buffer, 33);
 
     // wait for ACK response
@@ -266,7 +298,7 @@ bool nrf24_tx(int fd, struct gpiod_line* ce, char* string, int string_length){
 void nrf24_rx(int fd, struct gpiod_line* ce, uint8_t* rx_buffer){
     uint8_t tx_buffer[33] = {RF24_NOP};
     tx_buffer[0] = R_RX_PAYLOAD;
-    _spi_transfer(fd, tx_buffer, rx_buffer, 33);
+    _spi_transfer(fd, tx_buffer, rx_buffer, P0_PACKET_SIZE+1);
 }
 
 
